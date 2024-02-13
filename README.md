@@ -58,6 +58,10 @@ SKReact releases.
 
 To run the program, go to `SKReact/` and simply run `python3 skreact.py`.
 
+You will need a modeling of a reactor antineutrino spectrum for a single reactor (typically a PWR spectrum).
+If you are a member of Super-Kamiokande, you can find this file on the collaboration cluster: /home/lperisse/Work/Reactor/model/ReactorModel_SK.root
+Otherwise you can send me a request at [lorenzo.perisse@cnrs.fr](lorenzo.perisse@cnrs.fr).
+If you want to use your own reactor prediction, make sure the values in params.py are consistent between your reactor prediction and E_MIN, E_MAX, E_BINS and E_INTERVAL.
 
 
 ## Features
