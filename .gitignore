@@ -1,0 +1,12 @@
+react_p/
+__pycache__/
+
+.DS_Store
+*.swp
+*.pdf
+*.csv
+*.nuance
+*.pkl
+*.pyc
+
+*.code-workspace
