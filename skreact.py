@@ -867,7 +867,7 @@ def main():
             period_diff_dt = period_end_dt - period_start_dt
             total_osc_spec_pd = pd.Series(total_osc_spec / period_diff_dt.days, ENERGIES)
             total_osc_spec_pd.to_csv(filename)
-            print(f"Genereted oscillated flux file: {filename}, {period_diff_dt}")
+            print(f"Genereted oscillated flux file per day: {filename} for a period of {period_diff_dt}")
 
         for y in range(file_year_start, file_year_end + 1):
             for m in range(1, 13):
