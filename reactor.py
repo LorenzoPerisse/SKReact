@@ -30,7 +30,7 @@ xsecs = np.array([xsec(e) if e > IBD_MIN else 0 for e in ENERGIES])
 
 class Reactor:
 
-    # Initialiser
+    # Initializer
     def __init__(
         self,
         country,
@@ -63,11 +63,11 @@ class Reactor:
         self.default = default  # If the reactor came from the xls
         self.current_flux = -1.0
         if calc_spec:
-            self.prod_spec          = self._prod_spec()  # Produced
-            self.def_osc_pre_factor = self.osc_pre_factor()  # Total oscillated prefactor at SK
-            self.def_osc_spec       = self.osc_spec()  # Oscillated
+            self.prod_spec          = self._prod_spec()                 # Produced
+            self.def_osc_pre_factor = self.osc_pre_factor()             # Total oscillated prefactor at SK
+            self.def_osc_spec       = self.osc_spec()                   # Oscillated
             self.def_int_spec       = self.int_spec(self.def_osc_spec)  # Interacted
-            self.dir_flux_at_sk     = self._dir_flux_at_sk()  # Direction of nu flux at SK
+            self.dir_flux_at_sk     = self._dir_flux_at_sk()            # Direction of nu flux at SK
 
     # Monthly power output calculate from load factor and p_th
     def _p_monthly(self):
@@ -119,7 +119,7 @@ class Reactor:
         self.longitude = longitude
         self.dist_to_sk = self._dist_to_sk()
         return
-    
+
     def set_elevation(self, elevation):
         self.elevation = elevation
         self.dist_to_sk = self._dist_to_sk()
@@ -561,6 +561,7 @@ class Reactor:
 
             # Cycle through all months summing load factor*t
             lf_sum = 0
+            day_sum = 0
             month_range_start = month_start
             month_range_end = 13
             n_nu_tot = 0
@@ -580,6 +581,7 @@ class Reactor:
                     lf_month = float(self.lf_monthly["%i/%02i" % (year, month)])
                     lf_month /= 100  # To be a factor, not %age
                     lf_sum += lf_month * n_days_in_month
+                    day_sum += n_days_in_month
                     p_ths.append(self.p_th[str(year)])
 
             avg_p_th = sum(p_ths) / len(p_ths)
@@ -617,6 +619,7 @@ class Reactor:
     Spectrum of INTERACTED oscillated nu E at SK
     Takes oscillated spec as list and multiplies by xsec
     """
+    
     def int_spec(self, osc_spec):
         # From PHYSICAL REVIEW D 91, 065002 (2015)
         int_spec = np.multiply(osc_spec, (SK_N_P * xsecs))
