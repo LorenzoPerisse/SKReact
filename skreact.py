@@ -3,7 +3,7 @@
 __author__ = "Alex Goldsack"
 
 """ 
-    Ver v2.0 (updated from v1.3 by Lorenzo Perisse)
+    Ver v2.1.0 (updated by Lorenzo Perisse)
     A GUI program to generate information regarding
     reactor neutrinos in Super-Kamiokande: production,
     oscillation, interaction and detection.
@@ -86,6 +86,8 @@ def extract_reactor_info(react_dir):
 
     global file_year_start
     global file_year_end
+    if len(file_names) == 0:
+        return reactors
     file_year_start = int(file_names[0][2:6])
     file_year_end = int(file_names[-1][2:6])
 
@@ -97,8 +99,8 @@ def extract_reactor_info(react_dir):
             engine = "openpyxl"
         else:
             engine = "xlrd"
-        react_dat = pd.read_excel(react_dir + file_name, header=None, 
-            engine=engine)
+        react_dat = pd.read_excel(react_dir + file_name, header=None,
+                                  engine=engine)
         # Must be in format Country,Name,Lat,Long,Type,Mox?,Pth,LF-monthly
         # Look through xls file's reactors.
         for index, data in react_dat.iterrows():
@@ -116,7 +118,7 @@ def extract_reactor_info(react_dir):
                 data_p_th      = float(data[7])
                 # data_lf = []
                 # for month in range(1, 13):
-                #     data_lf.append(float(data[7 + month]))
+                #     data_lf.append(float(data[8 + month]))
             except ValueError:
                 if VERBOSE_IMPORT_ERR:
                     print("PROBLEM IN .XLS FILE")
@@ -185,7 +187,7 @@ def extract_reactor_info(react_dir):
                     for month in range(1, 13):
                         lf_header = file_year + "/%02i" % month
                         try:
-                            # 6 is to skip the reactor data
+                            # 7 is to skip the reactor data
                             reactor.add_to_lf(lf_header, float(data[7 + month]))
                         except:
                             if VERBOSE_IMPORT_ERR:
@@ -254,8 +256,9 @@ def extract_reactor_info(react_dir):
                             )
                         reactors[-1].add_to_lf(lf_header, 0.0)
             # if not in_reactors and ang_dist >= R_THRESH_DEG:
-            #     if VERBOSE_IMPORT:
-            #         print(data[1].strip() + " out of range, skipping...")
+            if not in_reactors:
+                if VERBOSE_IMPORT:
+                    print(data[1].strip() + " out of range, skipping...")
 
         # Checking if reactor isn't present in this file
         # adds zeros for load factor if so, use the previous p_th
@@ -403,6 +406,10 @@ def main():
     splash_win.update()
 
     # Setup dt objects of dataset
+    if len(reactors) == 0:
+        print("no database file was found: please put reactor database file into " + REACT_DIR)
+        exit(1)
+
     data_start_date = reactors[0].lf_monthly.index[0]
     data_start_year = int(data_start_date[:4])
     data_start_month = int(data_start_date[5:7])
@@ -583,6 +590,8 @@ def main():
     # Load factors/ (P/R^2) / event rate etc.
     lf_labelframe = ttk.Labelframe(rh_frame, text="Reactor Monthly Load Factors")
     lf_labelframe.grid(column=0, row=2, sticky=N)
+    izu_genframe = ttk.Labelframe(rh_frame, text="Monthly Load Factor Generator")
+    izu_genframe.grid(column=0, row=3, sticky=N)
 
     # =========================================================================
 
@@ -660,7 +669,7 @@ def main():
         reactor_fluxes_list.selection_set(new_reactor_sorted_i)
         reactor_fluxes_list.activate(new_reactor_sorted_i)
         highlight_reactor(reactors.index(new_reactor))
-        # Index will alwas be -1 as it was just added
+        # Index will always be -1 as it was just added
         # show_info(new_reactor)
         return
 
@@ -684,8 +693,8 @@ def main():
     # add_reactor_button.grid(in_=reactor_list_control_frame, column=2, row=0)
 
     # Boxes to select start/end dates
-    period_labelframe = ttk.Labelframe(skreact_win, 
-        text="Period Selection (Inclusive)")
+    period_labelframe = ttk.Labelframe(skreact_win,
+                                       text="Period Selection (Inclusive)")
     # period_labelframe.pack(in_=reactors_labelframe,side=BOTTOM)
     period_labelframe.grid(in_=lf_labelframe, column=0, row=1)
 
@@ -771,8 +780,8 @@ def main():
         new_spectro_fig.show()
         return
 
-    spectro_expand_button = Button(spectro_labelframe, text="Open in new win", 
-        command=expand_spectro)
+    spectro_expand_button = Button(spectro_labelframe, text="Open in new win",
+                                   command=expand_spectro)
     spectro_expand_button.grid(column=0, row=3)
 
     lf_fig = Figure(figsize=(FIG_X, FIG_Y), dpi=100)
@@ -838,9 +847,35 @@ def main():
     # Stack option put in further down after update_n_nu definition
     lf_save_button = Button(lf_options_frame, text="Save .csv", command=save_lf)
     lf_save_button.grid(column=2, row=0)
-    lf_expand_button = Button(lf_options_frame, text="Open in new win", 
-        command=expand_lf)
+    lf_expand_button = Button(lf_options_frame, text="Open in new win",
+                              command=expand_lf)
     lf_expand_button.grid(column=2, row=1)
+
+    def gen_monthlyoscfluxfile(*args):
+        print("Generating monthly load factors")
+
+        def set_period(yr, mon):
+            start_year_combo.set(yr)
+            start_month_combo.set(mon)
+            end_year_combo.set(yr)
+            end_month_combo.set(mon)
+            update_n_nu()
+
+        def save_and_close(filename):
+            period_start_dt = dt(int(start_year_combo.get()), int(start_month_combo.get()), 1)
+            period_end_dt = dt(int(end_year_combo.get()) + ((int(end_month_combo.get()) + 1) // 13), (int(end_month_combo.get()) % 12) + 1, 1)
+            period_diff_dt = period_end_dt - period_start_dt
+            total_osc_spec_pd = pd.Series(total_osc_spec / period_diff_dt.days, ENERGIES)
+            total_osc_spec_pd.to_csv(filename)
+            print(f"Genereted oscillated flux file: {filename}, {period_diff_dt}")
+
+        for y in range(file_year_start, file_year_end + 1):
+            for m in range(1, 13):
+                set_period(y, m)
+                save_and_close(f"oscspec_{y:04d}{m:02d}.auto.csv")
+
+    izugen_button = Button(izu_genframe, text="Generate monthly .csv", command=gen_monthlyoscfluxfile)
+    izugen_button.grid(column=0, row=0)
 
     prod_spec_fig = Figure(figsize=(FIG_X, FIG_Y), dpi=100)
     prod_spec_ax = prod_spec_fig.add_subplot(111)
@@ -871,6 +906,7 @@ def main():
     effs_ax = int_spec_ax.twinx()
     int_spec_canvas = FigureCanvasTkAgg(int_spec_fig, master=int_spec_labelframe)
     int_spec_canvas.get_tk_widget().grid(column=0, row=0, columnspan=2)
+
     # osc_spec_toolbar = NavigationToolbar2Tk(osc_spec_canvas,
     # osc_spec_labelframe)
 
@@ -937,7 +973,7 @@ def main():
             # spec = total_int_spec.to_list()
             # probs = [x/total_int_spec.sum() for x in spec]
             # probs = total_int_spec.divide(total_int_spec.sum()).tolist()
-            probs = np.divide(total_int_spec,total_int_spec.sum()).tolist()
+            probs = np.divide(total_int_spec, total_int_spec.sum()).tolist()
 
             # Set up the dist and generate list from that
             prob_distribution = stats.rv_discrete(
@@ -958,8 +994,8 @@ def main():
                 # to appear nuance_outside the tank
                 r = SK_R * math.sqrt(random.random())
 
-                x = (r)*math.cos(theta)
-                y = (r)*math.sin(theta)
+                x = (r) * math.cos(theta)
+                y = (r) * math.sin(theta)
 
                 z = random.uniform(-SK_HH, SK_HH)
 
@@ -985,7 +1021,7 @@ def main():
 
             osc_spec_nuance_win.destroy()
 
-            plt.hist(nuance_energies,bins=100,label="Generated Energies")
+            plt.hist(nuance_energies, bins=100, label="Generated Energies")
             plt.legend()
             plt.show()
 
@@ -1173,27 +1209,29 @@ def main():
         smear_spec_ax.clear()
         effs_ax.clear()
         if int_spec_eff_var.get():
-            effs_ax.tick_params(axis=u"both",which=u"both",length=1) 
+            effs_ax.tick_params(axis=u"both", which=u"both", length=1)
             effs_ax.set_ylabel("Efficency of detection in WIT")
-            effs_ax.yaxis.set_ticks(np.linspace(0,1,11))
+            effs_ax.yaxis.set_ticks(np.linspace(0, 1, 11))
         else:
-            effs_ax.tick_params(axis=u"both",which=u"both",length=0) 
+            effs_ax.tick_params(axis=u"both", which=u"both", length=0)
             effs_ax.yaxis.set_ticks([])
 
 
-        
+
         # To make it work with the LaTeX style formatting
-        if(int_spec_offset_var.get() == "nu"):
+        if (int_spec_offset_var.get() == "nu"):
             int_spec_x_label = "\\bar{\\nu}"
         else:
             int_spec_x_label = "e^+"
         int_spec_ax.set_xlabel(r"$E_{" + int_spec_x_label + "}$ [MeV]")
         int_spec_ax.set_ylabel(r"$dN/dE$ [MeV^-1]")
         osc_spec_ax.set_xlabel(r"$E_\bar{\nu}$ [MeV]")
-        osc_spec_ax.set_ylabel(r"$dN/dE$ [MeV^-1]")
+        # osc_spec_ax.set_ylabel(r"$dN/dE$ [MeV^-1]")
+        osc_spec_ax.set_ylabel(r"$dN/dE$ [MeV^-1.cm^-2]")
+        # osc_spec_ax.set_ylabel(r"$dN/dE$ [MeV^-1.cm^-2.day^-1]")
         prod_spec_ax.clear()
         prod_spec_ax.set_xlabel(r"$E_\bar{\nu}$ [MeV]")
-        # prod_spec_ax.set_ylabel(r"$n_{prod}$ [MeV^-1 s^-1]")
+        # prod_spec_ax.set_ylabel(r"$n_{prod}$ [MeV^-1.s^-1]")
         prod_spec_ax.set_ylabel(r"$dN/dE$ [MeV^-1]")
         lf_ax.clear()
         lf_tot_ax.clear()
@@ -1260,7 +1298,7 @@ def main():
                         ax=lf_ax,
                         label = highlighted_reactor.name)
                     highlighted_lf_tot.index = reactors[0].lf_monthly.index
-                    
+
                 else:
                     highlighted_lf_tot.index = reactor_lf_tot.index
                     highlighted_lf_tot.loc[period_start_dt:period_end_dt].plot(
@@ -1309,11 +1347,11 @@ def main():
                         color="C%i" % i,
                     )
                     # For LaTeX typesetting
-                    if(fuel.lower() == "total"):
+                    if (fuel.lower() == "total"):
                         fuel_label = "Total"
                     else:
-                        fuel_label=r"$^{" + fuel[-3:] + "}$" + fuel.partition("_")[0]
-                        fuel_label = r"$^{%s}$%s" % (fuel[-3:],fuel.partition("_")[0])
+                        fuel_label = r"$^{" + fuel[-3:] + "}$" + fuel.partition("_")[0]
+                        fuel_label = r"$^{%s}$%s" % (fuel[-3:], fuel.partition("_")[0])
                     prod_spec_ax.plot(
                         ENERGIES, 
                         highlighted_e_spec[fuel], 
@@ -1493,8 +1531,8 @@ def main():
         if smear_imported:
             smear_spec = wit_smear.smear(total_int_spec)
             # smear_spec.plot(ax=smear_spec_ax, color="C3", label="Detected")
-            smear_spec_ax.plot(smear_x_axis, smear_spec, 
-                color="C3", label="Smeared")
+            smear_spec_ax.plot(smear_x_axis, smear_spec,
+                               color="C3", label="Smeared")
             det_spec_int = np.sum(smear_spec, dx=SMEAR_INTERVAL)
 
         int_spec_int_label["text"] = "N_int in ID in period = %5e" % int_spec_int
@@ -1563,10 +1601,7 @@ def main():
         prod_spec_ax.set_yscale("log")
         # locmaj = matplotlib.ticker.LogLocator(base=10)
         # prod_spec_ax.set_major_locator(locmaj)
-        loc_min = ticker.LogLocator(base=10.0,subs=(
-                np.linspace(0.1,0.9,9).tolist()
-            ),
-            numticks=10)
+        loc_min = ticker.LogLocator(base=10.0, subs=(np.linspace(0.1, 0.9, 9).tolist()), numticks=10)
         prod_spec_ax.yaxis.set_minor_locator(loc_min)
         prod_spec_ax.yaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
         prod_spec_fig.tight_layout()
@@ -1611,6 +1646,7 @@ def main():
         # print()
 
     update_end = time.time()
+
     # print("Update runtime = %f" % (update_end - update_start))
     # print()
     # print("===========")
