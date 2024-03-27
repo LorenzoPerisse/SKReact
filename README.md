@@ -1,4 +1,4 @@
-# SKReact v2.0
+# SKReact
 A reactor neutrino simulator for Super-Kamiokande, simulating production in
 reactors, oscillation to SK, cross section for IBD on free protons, and detector
 smearing. Built referencing 
@@ -11,11 +11,11 @@ Note that the IBD cross section implemented in SKReact is using a simplified for
 
 ## List of main updates
 
-### v1.3
+### v1.3.0
 * Single reactor spectrum modeling: conversion method based on [Mueller *et al.* (2011)](https://arxiv.org/abs/1101.2663).
 * Oscillation parameters: NuFit, 3-flavor fit, July 2019.
 
-### v2.0
+### v2.0.0
 * Single reactor spectrum modeling: reactor data-driven method based on [An *et al.* (2022)](https://arxiv.org/abs/2203.06686) + summation method based on [Perisse *et al.* (2023)](https://arxiv.org/abs/2304.14992v2).
 * ROOT file used as input and output files.
 * Oscillation parameters: NuFit, 3-flavor fit, November 2022.
@@ -27,21 +27,48 @@ Note that the IBD cross section implemented in SKReact is using a simplified for
 * Spectrum binning is 1keV and range up to 16 MeV.
 * Constant updated with PDG 2022 data.
 
+### v2.1.0
+* Adding funciton for monthly-loading factor dumping based on Shota Izumiyama work.
 
 
-## Installation and Running
+
+## Installation and dependencies
 SKReact uses python 3(.7.0), it does not support python 2.
 Install the required modules using pip: 
 
 `$ pip install -r requirements.txt`.
 
+
+## Reactor database format
 By default SKReact uses `.xls/.xlsx` data sheets (FORCE_XLS_IMPORT = True in params.py) summarizing ractor activities.
 Data are taken from the [IAEA-PRIS database](https://pris.iaea.org/PRIS/home.aspx).
 If are not a IAEA-PRIS member, you can stil get PRIS data kindly compiled by [INFN](https://www.fe.infn.it/radioactivity/antineutrino/index.html#download) or through [https://reactors.geoneutrinos.org/](https://reactors.geoneutrinos.org/).
 
+Note that by v2.0.0 and over, the databse format must have 20 columns answering the following order:
+* country
+* reactor name
+* latitude (in degree)
+* longitude (in degree)
+* elevation (in meter, default to 0 if unknown ; note that this data should be available on PRIS)
+* reactor type
+* mox (0 if not a MOX reactor, 1 otherwise)
+* Pth (in MW) 
+* january LF (in %)
+* february LF (in %)
+* march LF (in %)
+* april LF (in %)
+* may LF (in %)
+* june LF (in %)
+* july LF (in %)
+* august LF (in %)
+* september LF (in %)
+* october LF (in %)
+* november LF (in %)
+* december LF (in %)
+
+
 Place the `.xls/xlsx` files into `react_p/` in the SKReact directory, with their names unchanged (i.e. they must be labeled DBXXXX where XXXX is the associated year).
-Simply create the directory `react_p/` if it does not already exist, or change the
-`REACT_DIR` variable in `params.py` if you want to pull the data from somewhere else.
+Simply create the directory `react_p/` if it does not already exist, or change the `REACT_DIR` variable in `params.py` if you want to pull the data from somewhere else.
 You will compute and saved into the ROOT file by default the spectrum associated to the summed period of all `.xls/.xlsx` files located in `react_p/`.
 
 You can also use a pickle file such as `reactors_main.pkl`.
@@ -56,10 +83,13 @@ Running from then on with a `reactors_main.pkl` file will be much faster on
 startup. There is a chance you will need to recompile from `.xls/.xlsx` files between
 SKReact releases.
 
+
+
+## Running
 To run the program, go to `SKReact/` and simply run `python3 skreact.py`.
 
 You will need a modeling of a reactor antineutrino spectrum for a single reactor (typically a PWR spectrum).
-If you are a member of Super-Kamiokande, you can find this file on the collaboration cluster: /home/lperisse/Work/Reactor/model/ReactorModel_SK.root
+If you are a member of Super-Kamiokande, you can find this file on sukap cluster: /home/lperisse/Work/Reactor/model/ReactorModel_SK.root
 Otherwise you can send me a request at [lorenzo.perisse@cnrs.fr](lorenzo.perisse@cnrs.fr).
 If you want to use your own reactor prediction, make sure the values in params.py are consistent between your reactor prediction and E_MIN, E_MAX, E_BINS and E_INTERVAL.
 
