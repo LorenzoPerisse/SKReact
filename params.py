@@ -121,7 +121,6 @@ DOWN_MASK = DOWN_ENERGIES > ENERGIES[0]
 # REACTOR NU PRODUCTION =======================================================
 
 # Fuel factors for different reactors (fission/power)
-# Using first values from PHYSICAL REVIEW D 91, 065002 (2015)
 # TODO: Which values are best? Also, MOX is different for different reactors
 # TODO: Get better values for FBRs rather than copying PWR
 # NOTE : HTGR is a newly added reactor type in SKReact-v2.0
@@ -223,19 +222,39 @@ PU_241_DA = [4.37e-2, 2.60e-2, 5.66e-3, 7.49e-4, 1.02e-4, 9.03e-6]
 # S_13_NH = 0.02237
 # S_13_IH = 0.02259
 # THET_13 = 8.6
+# S_13_IH = 0.02223
+# S_23_IH = 0.569
+# DM_23 = DM_31 - DM_21  # eV^2
 
 
 
 
-# From NuFit November 2023 (with SK atm constraints)  IBD rate = 8.9693
-DM_21 = 7.41e-5  # eV^2
-DM_31 = 2.507e-3  # eV^2
-S_12  = 0.303
-THET_12 = 33.41
-S_23_NH = 0.451
-THET_23 = 42.2
-S_13_NH = 0.02225
-THET_13 = 8.58
+# From NuFit November 2022 (with SK atm constraints)  IBD rate = 8.9693
+# DM_21 = 7.41e-5  # eV^2
+# DM_31 = 2.507e-3  # eV^2
+# DM_23 = DM_31 - DM_21  # eV^2
+# S_12  = 0.303
+# THET_12 = 33.41
+# S_23_NH = 0.451
+# S_23_IH = 0.539
+# S_13_NH = 0.02225
+# S_13_IH = 0.0220
+# THET_13 = 8.58
+# THET_23 = 42.2
+
+
+# From PDG 2022 Prog.Theor.Exp.Phys. 2022, 083C01 (2022)
+DM_21 = 7.53e-5  # eV^2
+DM_23 = 2.453e-3  # eV^2 (NH)
+DM_31 = DM_21 + DM_23
+S_12 = 0.307
+THET_12 = 33.64708 # calculated from S_12
+S_23_NH = 0.546
+S_23_IH = 0.539
+S_13_NH = 0.0220
+S_13_IH = 0.0220
+THET_13 = 8.52981 # calculated from S_13_NH/IH
+
 
 # +1sigma -> decrease rate  IBD rate = 8.78933
 # DM_21 = 7.62e-5  # eV^2       #-> decrease rate  IBD rate = 8.92358
@@ -258,9 +277,6 @@ THET_13 = 8.58
 # THET_13 = 8.47
 
 
-DM_23 = DM_31 - DM_21  # eV^2
-S_23_IH = 0.569
-S_13_IH = 0.02223
 C_12 = 1 - S_12
 C_23_NH = 1 - S_23_NH
 C_23_IH = 1 - S_23_IH
